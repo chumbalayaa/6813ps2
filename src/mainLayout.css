@@ -12,4 +12,20 @@
 
 #content{
 	background-color:gray;
+	max-width:400px;
+	max-height: 400px;
+	min-width:400px;
+	min-height: 400px;
+	padding: 0px;
+	border: 1px solid gray;
+	overflow: hidden;
+}
+
+#board {
+
+}
+
+.cell {
+	display: inline-block;
+	float: left;
 }
