@@ -60,7 +60,7 @@
     // Fill in this function to toggle the display for whose turn
     // The color parameter should be either "black" or "red"
     var toggleTurn = function(color) {
-	// Your code here
+	    // Your code here
     }
 
 
@@ -84,9 +84,25 @@
         for (var j = 0; j < board.boardSize; j++) {
             for (var i = 0; i < board.boardSize; i ++) {
                 if ((i+j)%2 == 0) {
-                    $("#board").append("<div id="+String(i)+String(j)+" class='cell' style='width:"+pixelSize+"px; height:"+pixelSize+"px; background-color:#FFFFFF'></div>"); 
+                    $("#board").append("<div id="+i+","+j+" class='cell' style='width:"+pixelSize+"px; height:"+pixelSize+"px; background-color:#FFFFFF'></div>"); 
                 } else {
-                    $("#board").append("<div id="+String(i)+String(j)+" class='cell' style='width:"+pixelSize+"px; height:"+pixelSize+"px;'></div>"); 
+                    $("#board").append("<div id="+i+","+j+" class='cell' style='width:"+pixelSize+"px; height:"+pixelSize+"px;'></div>"); 
+                }  
+            }
+        }
+
+        //Places Intial Checkers
+        for (var j = 0; j < board.boardSize; j++) {
+            for (var i = 0; i < board.boardSize; i ++) {
+                var id = i+','+j;
+                if ((j==0 && i%2==1) || (j==1 && i%2==0)) {
+                    //place red checker
+                    var e = document.getElementById(id)
+                    e.innerHTML = '<img src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                } if ((j==board.boardSize-2 && i%2==1) || (j==board.boardSize-1 && i%2==0)) {
+                    //place black checker
+                    var e = document.getElementById(id)
+                    e.innerHTML = '<img src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
                 }  
             }
         }
