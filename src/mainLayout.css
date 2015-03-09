@@ -29,3 +29,9 @@
 	display: inline-block;
 	float: left;
 }
+
+#turnDiv {
+	text-align: center;
+	background-color: black;
+	color: white;
+}

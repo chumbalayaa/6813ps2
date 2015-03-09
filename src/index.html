@@ -60,7 +60,19 @@
     // Fill in this function to toggle the display for whose turn
     // The color parameter should be either "black" or "red"
     var toggleTurn = function(color) {
-	    // Your code here
+	    if (color == 'black') {
+            $("#turnDiv").css("background-color", "black");
+            $("#turnDiv").text("Black Turn");
+            whoseTurn = 'black';
+        } else {
+            $("#turnDiv").css("background-color", "red");
+            $("#turnDiv").text("Red Turn");
+            whoseTurn = 'red';
+        }
+    }
+
+    var encode = function(i, j) {
+        return ((i*31)+(j*7));
     }
 
 
@@ -76,13 +88,15 @@
         }
 
 
-	rules = new Rules(board);
+	   rules = new Rules(board);
 
 
      	// Draw Board
         pixelSize = 400/board.boardSize;
+        testing = [];
         for (var j = 0; j < board.boardSize; j++) {
             for (var i = 0; i < board.boardSize; i ++) {
+                var total = encode(i, j);
                 if ((i+j)%2 == 0) {
                     $("#board").append("<div id="+i+","+j+" class='cell' style='width:"+pixelSize+"px; height:"+pixelSize+"px; background-color:#FFFFFF'></div>"); 
                 } else {
@@ -90,7 +104,6 @@
                 }  
             }
         }
-
         //Places Intial Checkers
         for (var j = 0; j < board.boardSize; j++) {
             for (var i = 0; i < board.boardSize; i ++) {
@@ -107,20 +120,48 @@
             }
         }
 
+        //Move checker picture
+        //made_king is a boolean
+        //remove[0] = {row: ,col:, color:, isKing: }
+        var moveChecker = function(playerColor, from_row, from_col, to_row, to_col, remove, made_king) {
+            var oID = from_col+','+from_row;
+            var origin = document.getElementById(oID) 
+            var dID = to_col+','+to_row;
+            var destination = document.getElementById(dID) 
+            origin.innerHTML = "";
+            //Get King Status
+            var checker = board.getCheckerAt(from_row, from_col);
+            if (playerColor == 'black') {
+                destination.innerHTML = '<img src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+            } else {
+                destination.innerHTML = '<img src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
+            }
+            if (remove[0] != undefined) {//Remove a certain checker
+                var removeID = remove[0].col+','+remove[0].row;
+                var removal = document.getElementById(removeID);
+                removal.innerHTML = "";
+            }
+            
+        }
+
         board.addEventListener('add',function (e) {
     		// Your code here
+            console.log('add');
     	},true);
 
     	board.addEventListener('move',function (e) {
     		// Your code here
+            console.log('move');
+            console.log(e);
     	},true);
 
-        board.addEventListener('remove', function(e) {
-        	// Your code here
+        board.addEventListener('remove',function (e) {
+            console.log('remove');
         }, true);
 
         board.addEventListener('promote',function (e) {
     		// Your code here
+            console.log('promote');
     	},true);
 
         
@@ -133,7 +174,12 @@
           var playerDirection = directionOf(playerColor);
           var result = rules.makeRandomMove(playerColor, playerDirection);
           if (result != null) {
-            toggleTurn();
+            moveChecker(playerColor, result['from_row'], result['from_col'], result['to_row'], result['to_col'], result['remove'], result['made_king']);
+            if (playerColor == 'black') {
+                toggleTurn('red');
+            } else {
+                toggleTurn('black');
+            }
           }
         });
 
@@ -151,7 +197,7 @@
     <tr>
         <td id="navigation">
           <table>
-			  <tr><td>		<!-- Your code here -->			</td></tr>
+			  <tr><td><div id="turnDiv">Black Turn</div></td></tr>
               <tr><td><input id="btnNewGame" type="button" name="new" value="New Game"/></td></tr>
               <tr><td><input id="btnAutoMove" type="button" name="new" value="Auto Move"/></td></tr>
 

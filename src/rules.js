@@ -96,7 +96,6 @@ var Rules = function(board) {
    * in the shape of that from makeMove(..)
    */
   this.makeRandomMove = function(playerColor, playerDirection) {
-
     // Get all checkers of my color
     var checkers = board.getAllCheckers();
     var myCheckers = [];
