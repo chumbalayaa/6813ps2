@@ -23,7 +23,10 @@
 }
 
 #board {
-	
+	max-width:400px;
+	max-height: 400px;
+	min-width:400px;
+	min-height: 400px;
 }
 
 .cell {
@@ -36,13 +39,3 @@
 	background-color: black;
 	color: white;
 }
-
-#theCanvas {
-    width:100%; 
-    height:100%;
-    position:absolute;
-    max-width:400px;
-	max-height: 400px;
-	min-width:400px;
-	min-height: 400px;
- }

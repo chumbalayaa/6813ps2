@@ -48,7 +48,9 @@
     //data model
     var board;
     var rules;
-    var whoseTurn = "black";	
+    var whoseTurn = "black";
+    var gameOver = false;	
+    var winner = "";
 
     var directionOf = function(color) {
       if (color == "black") {
@@ -69,7 +71,7 @@
             $("#turnDiv").text("Red Turn");
             whoseTurn = 'red';
         }
-    }
+    };
 
 
     // This allows the Javascript code inside this block to only run when the page
@@ -78,8 +80,12 @@
 
         if ($.getUrlVar('size') && $.getUrlVar('size') >= 6) {
             board = new Board($.getUrlVar('size'));
+            var numRed = $.getUrlVar('size'),
+                numBlack = $.getUrlVar('size');
         } else {
             board = new Board(DEFAULT_BOARD_SIZE);
+            var numRed = DEFAULT_BOARD_SIZE,
+                numBlack = DEFAULT_BOARD_SIZE;
         }
 
 
@@ -111,6 +117,11 @@
                 e.innerHTML = '<img src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
             }
         };
+
+        // var endGame = function(winningColor) {
+        //     winner = winningColor;
+        //     gameOver = true;
+        // };
 
         //Move checker picture
         var moveChecker = function(event) {
@@ -144,45 +155,55 @@
             var id = event.details.col+','+event.details.row;
             var e = document.getElementById(id);
             e.innerHTML = "";
+            // if (event.details.checker.color == 'black') {
+            //     numBlack -= 1;
+            //     console.log("BLACK: "+numBlack);
+            //     if (numBlack == 0) {
+            //         endGame('red');
+            //     }
+            // } else {
+            //     numRed -= 1;
+            //     console.log("RED: "+numRed);
+            //     if (numRed == 0) {
+            //         endGame('black');
+            //     }
+            // }
         };
 
-        //Promote checker? Nope...
+        var canvas = document.getElementById("theCanvas");
+        var context = canvas.getContext("2d");
 
         var drawArrow = function(fromCol, fromRow, toCol, toRow) {
-            var canvas = document.getElementById('theCanvas');
-            var ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            context.clearRect(0, 0, canvas.width, canvas.height);
 
             //Style
-            ctx.strokeStyle = '#ffff00';
-            ctx.lineWidth   = 1;
+            context.strokeStyle = '#ffff00';
 
-            ctx.save();
-            ctx.translate(fromCol, fromRow);
+            //main line
+            context.beginPath();
+            context.moveTo((fromCol*pixelSize + pixelSize/2), (fromRow*pixelSize + pixelSize/2));
+            context.lineTo((toCol*pixelSize + pixelSize/2), (toRow*pixelSize + pixelSize/2));
+            context.lineWidth = 2;
+            context.closePath();
+            context.stroke();
+            //head side 1
+            context.beginPath();
+            var headlen = 10;
             var angle = Math.atan2(toRow-fromRow,toCol-fromCol);
-            console.log(angle);
-            ctx.rotate(angle);
-            // draw your arrow, with its origin at [0, 0]
-            ctx.lineTo(100, 100);
-            ctx.stroke();
-            ctx.restore();
-
-            //console.log(fromCol*pixelSize);
-            //console.log(fromRow*pixelSize);
-            //console.log(toCol*pixelSize);
-            //console.log(toRow*pixelSize);
-            //ctx.moveTo(fromCol*pixelSize, fromRow*pixelSize);
-            //ctx.lineTo(toCol*pixelSize,toRow*pixelSize);
-            //ctx.stroke();
-
-            //var headlen = 10;   // length of head in pixels
-            //var angle = Math.atan2(toRow-fromRow,toCol-fromCol);
-            //ctx.moveTo(fromCol, fromRow);
-            //ctx.lineTo(toCol, toRow);
-            //ctx.lineTo(toCol-headlen*Math.cos(angle-Math.PI/6),toRow-headlen*Math.sin(angle-Math.PI/6));
-            //ctx.moveTo(toCol, toRow);
-            //ctx.lineTo(toCol-headlen*Math.cos(angle+Math.PI/6),toRow-headlen*Math.sin(angle+Math.PI/6));
-            //ctx.stroke();
+            context.moveTo((toCol*pixelSize + pixelSize/2), (toRow*pixelSize + pixelSize/2));
+            context.lineTo((toCol*pixelSize + pixelSize/2)-headlen*Math.cos(angle-Math.PI/6),(toRow*pixelSize + pixelSize/2)-headlen*Math.sin(angle-Math.PI/6));
+            context.lineWidth = 2;
+            context.closePath();
+            context.stroke();
+            //head side 2
+            context.beginPath();
+            var headlen = 10;
+            var angle = Math.atan2(toRow-fromRow,toCol-fromCol);
+            context.moveTo((toCol*pixelSize + pixelSize/2), (toRow*pixelSize + pixelSize/2));
+            context.lineTo((toCol*pixelSize + pixelSize/2)-headlen*Math.cos(angle+Math.PI/6),(toRow*pixelSize + pixelSize/2)-headlen*Math.sin(angle+Math.PI/6));
+            context.lineWidth = 2;
+            context.closePath();
+            context.stroke();       
         };
 
 
@@ -195,15 +216,17 @@
         },true);
 
         board.addEventListener('remove',function (e) {
+            //console.log(e);
             removeChecker(e);
         }, true);
 
         board.addEventListener('promote',function (e) {
-            console.log(e);
+            //console.log(e);
         },true);
 
         
         $("#btnNewGame").click(function(evt) {
+            context.clearRect(0, 0, canvas.width, canvas.height);
             board.prepareNewGame();
         });
 
@@ -213,9 +236,9 @@
           var result = rules.makeRandomMove(playerColor, playerDirection);
           if (result != null) {
             if (playerColor == 'black') {
-                toggleTurn('red');
+              toggleTurn('red');
             } else {
-                toggleTurn('black');
+              toggleTurn('black');
             }
           }
         });
@@ -244,9 +267,8 @@
         <td id="content">
 			
 				<!-- Your code here -->
-                <canvas id="theCanvas"></canvas>
-                <div id="board">
-                </div>
+                <canvas id="theCanvas" width="400" height="400" style="position:absolute;"></canvas>
+                <div id="board"></div>          
             
         </td>
     </tr>
