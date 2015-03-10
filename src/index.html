@@ -60,7 +60,7 @@
     // Fill in this function to toggle the display for whose turn
     // The color parameter should be either "black" or "red"
     var toggleTurn = function(color) {
-	    if (color == 'black') {
+        if (color == 'black') {
             $("#turnDiv").css("background-color", "black");
             $("#turnDiv").text("Black Turn");
             whoseTurn = 'black';
@@ -70,11 +70,6 @@
             whoseTurn = 'red';
         }
     }
-
-    var encode = function(i, j) {
-        return ((i*31)+(j*7));
-    }
-
 
 
     // This allows the Javascript code inside this block to only run when the page
@@ -93,10 +88,8 @@
 
      	// Draw Board
         pixelSize = 400/board.boardSize;
-        testing = [];
         for (var j = 0; j < board.boardSize; j++) {
             for (var i = 0; i < board.boardSize; i ++) {
-                var total = encode(i, j);
                 if ((i+j)%2 == 0) {
                     $("#board").append("<div id="+i+","+j+" class='cell' style='width:"+pixelSize+"px; height:"+pixelSize+"px; background-color:#FFFFFF'></div>"); 
                 } else {
@@ -104,65 +97,110 @@
                 }  
             }
         }
-        //Places Intial Checkers
-        for (var j = 0; j < board.boardSize; j++) {
-            for (var i = 0; i < board.boardSize; i ++) {
-                var id = i+','+j;
-                if ((j==0 && i%2==1) || (j==1 && i%2==0)) {
-                    //place red checker
-                    var e = document.getElementById(id)
-                    e.innerHTML = '<img src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
-                } if ((j==board.boardSize-2 && i%2==1) || (j==board.boardSize-1 && i%2==0)) {
-                    //place black checker
-                    var e = document.getElementById(id)
-                    e.innerHTML = '<img src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
-                }  
+
+        //Add checker picture
+        var addChecker = function(event) {
+            var i = event.details.checker.col;
+            var j = event.details.checker.row;
+            var color = event.details.checker.color;
+            var id = i+','+j;
+            var e = document.getElementById(id);
+            if (color == 'black') {
+                e.innerHTML = '<img src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+            } else {
+                e.innerHTML = '<img src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
             }
-        }
+        };
 
         //Move checker picture
-        //made_king is a boolean
-        //remove[0] = {row: ,col:, color:, isKing: }
-        var moveChecker = function(playerColor, from_row, from_col, to_row, to_col, remove, made_king) {
-            var oID = from_col+','+from_row;
+        var moveChecker = function(event) {
+            var oID = event.details.fromCol+','+event.details.fromRow;
             var origin = document.getElementById(oID) 
-            var dID = to_col+','+to_row;
+            var dID = event.details.toCol+','+event.details.toRow;
             var destination = document.getElementById(dID) 
             origin.innerHTML = "";
-            //Get King Status
-            var checker = board.getCheckerAt(from_row, from_col);
-            if (playerColor == 'black') {
-                destination.innerHTML = '<img src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+            //Get checker Status
+            var isKing = event.details.checker.isKing;
+            var color = event.details.checker.color;
+            if (color == 'black') {
+                if (isKing) {
+                    destination.innerHTML = '<img src="./graphics/black-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                } else {
+                    destination.innerHTML = '<img src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';  
+                }
             } else {
-                destination.innerHTML = '<img src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
+                if (isKing) {
+                    destination.innerHTML = '<img src="./graphics/red-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                } else {
+                    destination.innerHTML = '<img src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                }
+                
             }
-            if (remove[0] != undefined) {//Remove a certain checker
-                var removeID = remove[0].col+','+remove[0].row;
-                var removal = document.getElementById(removeID);
-                removal.innerHTML = "";
-            }
-            
-        }
+            drawArrow(event.details.fromCol, event.details.fromRow, event.details.toCol, event.details.toRow);
+        };
+
+        //Remove a checker picture
+        var removeChecker = function(event) {
+            var id = event.details.col+','+event.details.row;
+            var e = document.getElementById(id);
+            e.innerHTML = "";
+        };
+
+        //Promote checker? Nope...
+
+        var drawArrow = function(fromCol, fromRow, toCol, toRow) {
+            var canvas = document.getElementById('theCanvas');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            //Style
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth   = 1;
+
+            ctx.save();
+            ctx.translate(fromCol, fromRow);
+            var angle = Math.atan2(toRow-fromRow,toCol-fromCol);
+            console.log(angle);
+            ctx.rotate(angle);
+            // draw your arrow, with its origin at [0, 0]
+            ctx.lineTo(100, 100);
+            ctx.stroke();
+            ctx.restore();
+
+            //console.log(fromCol*pixelSize);
+            //console.log(fromRow*pixelSize);
+            //console.log(toCol*pixelSize);
+            //console.log(toRow*pixelSize);
+            //ctx.moveTo(fromCol*pixelSize, fromRow*pixelSize);
+            //ctx.lineTo(toCol*pixelSize,toRow*pixelSize);
+            //ctx.stroke();
+
+            //var headlen = 10;   // length of head in pixels
+            //var angle = Math.atan2(toRow-fromRow,toCol-fromCol);
+            //ctx.moveTo(fromCol, fromRow);
+            //ctx.lineTo(toCol, toRow);
+            //ctx.lineTo(toCol-headlen*Math.cos(angle-Math.PI/6),toRow-headlen*Math.sin(angle-Math.PI/6));
+            //ctx.moveTo(toCol, toRow);
+            //ctx.lineTo(toCol-headlen*Math.cos(angle+Math.PI/6),toRow-headlen*Math.sin(angle+Math.PI/6));
+            //ctx.stroke();
+        };
+
 
         board.addEventListener('add',function (e) {
-    		// Your code here
-            console.log('add');
-    	},true);
+            addChecker(e);
+        },true);
 
-    	board.addEventListener('move',function (e) {
-    		// Your code here
-            console.log('move');
-            console.log(e);
-    	},true);
+        board.addEventListener('move',function (e) {
+            moveChecker(e);
+        },true);
 
         board.addEventListener('remove',function (e) {
-            console.log('remove');
+            removeChecker(e);
         }, true);
 
         board.addEventListener('promote',function (e) {
-    		// Your code here
-            console.log('promote');
-    	},true);
+            console.log(e);
+        },true);
 
         
         $("#btnNewGame").click(function(evt) {
@@ -174,7 +212,6 @@
           var playerDirection = directionOf(playerColor);
           var result = rules.makeRandomMove(playerColor, playerDirection);
           if (result != null) {
-            moveChecker(playerColor, result['from_row'], result['from_col'], result['to_row'], result['to_col'], result['remove'], result['made_king']);
             if (playerColor == 'black') {
                 toggleTurn('red');
             } else {
@@ -207,6 +244,7 @@
         <td id="content">
 			
 				<!-- Your code here -->
+                <canvas id="theCanvas"></canvas>
                 <div id="board">
                 </div>
             

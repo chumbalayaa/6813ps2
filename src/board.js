@@ -1,3 +1,4 @@
+            console.log('remove');
 /**
  * Board represents the state of a checkerboard. A checkerboard is a square
  * array of squares. Although checkerboards are normally 8x8, Board can
