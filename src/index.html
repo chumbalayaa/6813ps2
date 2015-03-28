@@ -178,6 +178,7 @@
 
             //Style
             context.strokeStyle = '#ffff00';
+            context.fillStyle = '#ffff00';
 
             //main line
             context.beginPath();
@@ -185,25 +186,16 @@
             context.lineTo((toCol*pixelSize + pixelSize/2), (toRow*pixelSize + pixelSize/2));
             context.lineWidth = 2;
             context.closePath();
-            context.stroke();
-            //head side 1
+            context.stroke();  
+            //Draw triangle head    
             context.beginPath();
-            var headlen = 10;
-            var angle = Math.atan2(toRow-fromRow,toCol-fromCol);
-            context.moveTo((toCol*pixelSize + pixelSize/2), (toRow*pixelSize + pixelSize/2));
-            context.lineTo((toCol*pixelSize + pixelSize/2)-headlen*Math.cos(angle-Math.PI/6),(toRow*pixelSize + pixelSize/2)-headlen*Math.sin(angle-Math.PI/6));
-            context.lineWidth = 2;
-            context.closePath();
-            context.stroke();
-            //head side 2
-            context.beginPath();
-            var headlen = 10;
+            var headlen = 12;
             var angle = Math.atan2(toRow-fromRow,toCol-fromCol);
             context.moveTo((toCol*pixelSize + pixelSize/2), (toRow*pixelSize + pixelSize/2));
             context.lineTo((toCol*pixelSize + pixelSize/2)-headlen*Math.cos(angle+Math.PI/6),(toRow*pixelSize + pixelSize/2)-headlen*Math.sin(angle+Math.PI/6));
-            context.lineWidth = 2;
+            context.lineTo((toCol*pixelSize + pixelSize/2)-headlen*Math.cos(angle-Math.PI/6),(toRow*pixelSize + pixelSize/2)-headlen*Math.sin(angle-Math.PI/6));
             context.closePath();
-            context.stroke();       
+            context.fill();
         };
 
 
@@ -227,6 +219,7 @@
         
         $("#btnNewGame").click(function(evt) {
             context.clearRect(0, 0, canvas.width, canvas.height);
+            toggleTurn('black');
             board.prepareNewGame();
         });
 
