@@ -112,9 +112,9 @@
             var id = i+','+j;
             var e = document.getElementById(id);
             if (color == 'black') {
-                e.innerHTML = '<img src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
             } else {
-                e.innerHTML = '<img src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
+                e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
             }
         };
 
@@ -135,15 +135,15 @@
             var color = event.details.checker.color;
             if (color == 'black') {
                 if (isKing) {
-                    destination.innerHTML = '<img src="./graphics/black-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                    destination.innerHTML = '<img id=img'+dID+' src="./graphics/black-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
                 } else {
-                    destination.innerHTML = '<img src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';  
+                    destination.innerHTML = '<img id=img'+dID+' src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';  
                 }
             } else {
                 if (isKing) {
-                    destination.innerHTML = '<img src="./graphics/red-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                    destination.innerHTML = '<img id=img'+dID+' src="./graphics/red-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
                 } else {
-                    destination.innerHTML = '<img src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                    destination.innerHTML = '<img id=img'+dID+' src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
                 }
                 
             }
@@ -173,8 +173,105 @@
         var canvas = document.getElementById("theCanvas");
         var context = canvas.getContext("2d");
 
-        var drawArrow = function(fromCol, fromRow, toCol, toRow) {
+        canvas.addEventListener("mousedown", my_mousedown, false);
+        canvas.addEventListener("mousemove", my_mousemove, false);
+        canvas.addEventListener("mouseup", my_mouseup, false);
+
+        var dragging = {status: false,
+                        offset: undefined,
+                        start: undefined};
+
+        var getCellFromCoords = function(x, y) {
+            var newX = Math.floor(x/pixelSize);
+            var newY = Math.floor(y/pixelSize);
+            var xRemainder = (x/pixelSize - Math.floor(x/pixelSize)) * pixelSize;
+            var yRemainder = (y/pixelSize - Math.floor(y/pixelSize)) * pixelSize;
+            return [newX, newY, xRemainder, yRemainder];
+        };
+
+        function my_mousedown(event) {
+            //Find coordinates and cell
+            var rect = canvas.getBoundingClientRect();
+            var x = event.clientX - rect.left;
+            var y = event.clientY - rect.top;
+            var cellCoords = getCellFromCoords(x, y);
+            var cellX = cellCoords[0];
+            var cellY = cellCoords[1];
+            var xRemainder = cellCoords[2];
+            var yRemainder = cellCoords[3];
+            var theCell = document.getElementById(cellX+","+cellY);
+            
+            //Check if the cell has a checker
+            if (theCell.getElementsByTagName('img').length > 0) {
+                //Take checker out of cell
+                var checker = document.getElementById("img"+cellX+','+cellY);
+                theCell.innerHTML = "";
+
+                //Put checker into canvas for moving
+                context.drawImage(checker, x - xRemainder, y - yRemainder);
+
+                //Set dragging variable
+                dragging.status = true;
+                dragging.checker = checker;
+                dragging.offset = [xRemainder, yRemainder];
+                dragging.start = [cellX, cellY];
+            }
+        };
+
+        function my_mousemove(event) {
+            //If we're not dragging, don't do anything
+            if (dragging.status == false || dragging.offset == undefined) {return false;}
+
+            //Get current mouse position
+            var rect = canvas.getBoundingClientRect();
+            var mouseX = event.clientX - rect.left;
+            var mouseY = event.clientY - rect.top;
+            var offsetX = mouseX - dragging.offset[0];
+            var offsetY = mouseY - dragging.offset[1];
+            clearContext();
+            context.drawImage(dragging.checker, offsetX, offsetY);
+
+        };
+
+        function my_mouseup(event) {
+            if (dragging.status == true) {
+                //Find coordinates and cell
+                var rect = canvas.getBoundingClientRect();
+                var x = event.clientX - rect.left;
+                var y = event.clientY - rect.top;
+                var cellCoords = getCellFromCoords(x, y);
+                var cellX = cellCoords[0];
+                var cellY = cellCoords[1];
+                var theCell = document.getElementById(cellX+","+cellY);
+                var start = dragging.start;
+                if (start[0] == cellX && start[1] == cellY) {
+                    //It didn't move, don't do anything
+                    return false;
+                }
+                //Check to see if the cell has a checker
+                //TODO use rules instead of just seeing if it's free
+                if (theCell.getElementsByTagName('img').length == 0) {
+                    var theChecker = board.getCheckerAt(start[1], start[0]);
+                    board.moveTo(theChecker, cellY, cellX);
+
+                    //Take a checker out of canvas
+                    //context.clearRect(0, 0, canvas.width, canvas.height);
+
+                    //Set dragging variable
+                    dragging.status = false;
+                    dragging.checker = undefined;
+                    dragging.offset = undefined;
+                    dragging.start = undefined;
+                }
+            }
+        };
+
+        var clearContext = function() {
             context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        var drawArrow = function(fromCol, fromRow, toCol, toRow) {
+            clearContext();
 
             //Style
             context.strokeStyle = '#ffff00';
@@ -208,7 +305,6 @@
         },true);
 
         board.addEventListener('remove',function (e) {
-            //console.log(e);
             removeChecker(e);
         }, true);
 
