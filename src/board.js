@@ -70,7 +70,7 @@ var Board = function(size) {
      */
     this.isEmptyLocation = function(row, col) {
         if (this.getCheckerAt(row, col)) {
-            //alert("square [" + row + "," + col + "] is not empty");
+            alert("square [" + row + "," + col + "] is not empty");
             return false;
         }
         return true;

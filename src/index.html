@@ -51,6 +51,8 @@
     var whoseTurn = "black";
     var gameOver = false;	
     var winner = "";
+    var arrowTail = [undefined, undefined];
+    var arrowHead = [undefined, undefined];
 
     var directionOf = function(color) {
       if (color == "black") {
@@ -179,7 +181,9 @@
 
         var dragging = {status: false,
                         offset: undefined,
-                        start: undefined};
+                        start: undefined,
+                        checker: undefined,
+                        boardChecker: undefined};
 
         var getCellFromCoords = function(x, y) {
             var newX = Math.floor(x/pixelSize);
@@ -215,6 +219,7 @@
                 dragging.checker = checker;
                 dragging.offset = [xRemainder, yRemainder];
                 dragging.start = [cellX, cellY];
+                dragging.boardChecker = board.getCheckerAt(cellY, cellX);
             }
         };
 
@@ -245,7 +250,24 @@
                 var theCell = document.getElementById(cellX+","+cellY);
                 var start = dragging.start;
                 if (start[0] == cellX && start[1] == cellY) {
-                    //It didn't move, don't do anything
+                    //It didn't move
+                    //Redraw most recent arrow
+                    if (arrowTail[0] != undefined) {
+                        drawArrow(arrowTail[0], arrowTail[1], arrowHead[0], arrowHead[1]);
+                    }
+
+                    //Put the checker back in the cell
+                    var fakeEvent = {details: {checker: dragging.boardChecker}};
+                    addChecker(fakeEvent);
+
+                    //Set dragging variable
+                    dragging.status = false;
+                    dragging.checker = undefined;
+                    dragging.offset = undefined;
+                    dragging.start = undefined;
+                    dragging.boardChecker = undefined;
+
+                    //return false
                     return false;
                 }
                 //Check to see if the cell has a checker
@@ -254,16 +276,15 @@
                     var theChecker = board.getCheckerAt(start[1], start[0]);
                     board.moveTo(theChecker, cellY, cellX);
 
-                    //Take a checker out of canvas
-                    //context.clearRect(0, 0, canvas.width, canvas.height);
-
                     //Set dragging variable
                     dragging.status = false;
                     dragging.checker = undefined;
                     dragging.offset = undefined;
                     dragging.start = undefined;
+                    dragging.boardChecker = undefined;
                 }
             }
+            console.log(board);
         };
 
         var clearContext = function() {
@@ -293,6 +314,8 @@
             context.lineTo((toCol*pixelSize + pixelSize/2)-headlen*Math.cos(angle-Math.PI/6),(toRow*pixelSize + pixelSize/2)-headlen*Math.sin(angle-Math.PI/6));
             context.closePath();
             context.fill();
+            arrowTail = [fromCol, fromRow];
+            arrowHead = [toCol, toRow];
         };
 
 
