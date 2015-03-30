@@ -172,12 +172,16 @@
             // }
         };
 
+
+        //Attach mouse event listeners
         var canvas = document.getElementById("theCanvas");
         var context = canvas.getContext("2d");
 
         canvas.addEventListener("mousedown", my_mousedown, false);
         canvas.addEventListener("mousemove", my_mousemove, false);
         canvas.addEventListener("mouseup", my_mouseup, false);
+
+        document.addEventListener("mouseup", full_mouseup, false);
 
         var dragging = {status: false,
                         offset: undefined,
@@ -249,8 +253,12 @@
                 var cellY = cellCoords[1];
                 var theCell = document.getElementById(cellX+","+cellY);
                 var start = dragging.start;
+
+                //It didn't move
                 if (start[0] == cellX && start[1] == cellY) {
-                    //It didn't move
+                    //Clear Context
+                    clearContext();
+
                     //Redraw most recent arrow
                     if (arrowTail[0] != undefined) {
                         drawArrow(arrowTail[0], arrowTail[1], arrowHead[0], arrowHead[1]);
@@ -261,35 +269,81 @@
                     addChecker(fakeEvent);
 
                     //Set dragging variable
-                    dragging.status = false;
-                    dragging.checker = undefined;
-                    dragging.offset = undefined;
-                    dragging.start = undefined;
-                    dragging.boardChecker = undefined;
+                    resetDragging();
 
-                    //return false
+                    //return false?
                     return false;
                 }
+
+                //It moved
                 //Check to see if the cell has a checker
-                //TODO use rules instead of just seeing if it's free
                 if (theCell.getElementsByTagName('img').length == 0) {
                     var theChecker = board.getCheckerAt(start[1], start[0]);
-                    board.moveTo(theChecker, cellY, cellX);
+
+                    //Make Any kind of move
+                    //board.moveTo(theChecker, cellY, cellX);
+
+                    //Make move that follows rules
+                    var dirColor = directionOf(whoseTurn);
+                    var playerDir = directionOf(theChecker.color);
+                    var ramifications = rules.makeMove(theChecker, dirColor, playerDir, cellY, cellX);
+
+                    //BAD MOVE, WE NEED TO REVERT (**WE MUST INVERT**)
+                    if (ramifications == null || whoseTurn == theChecker.color) {
+                        console.log("BAD MOVE");
+                        //Clear Context
+                        clearContext();
+
+                        //Redraw most recent arrow
+                        if (arrowTail[0] != undefined) {
+                            drawArrow(arrowTail[0], arrowTail[1], arrowHead[0], arrowHead[1]);
+                        }
+
+                        //Put the checker back in the cell
+                        var fakeEvent = {details: {checker: dragging.boardChecker}};
+                        addChecker(fakeEvent);
+                    }
 
                     //Set dragging variable
-                    dragging.status = false;
-                    dragging.checker = undefined;
-                    dragging.offset = undefined;
-                    dragging.start = undefined;
-                    dragging.boardChecker = undefined;
+                    resetDragging();
                 }
             }
-            console.log(board);
+            //console.log(board);
         };
 
+        function full_mouseup(event) {
+            if (dragging.status == true) {
+                //Clear Context
+                clearContext();
+
+                //Redraw most recent arrow
+                if (arrowTail[0] != undefined) {
+                    drawArrow(arrowTail[0], arrowTail[1], arrowHead[0], arrowHead[1]);
+                }
+
+                //Put the checker back in the cell
+                var fakeEvent = {details: {checker: dragging.boardChecker}};
+                addChecker(fakeEvent);
+
+                //Set dragging variable
+                resetDragging();
+
+                //return false?
+                return false;
+            }
+        };
+ 
         var clearContext = function() {
             context.clearRect(0, 0, canvas.width, canvas.height);
-        }
+        };
+
+        var resetDragging = function() {
+            dragging.status = false;
+            dragging.checker = undefined;
+            dragging.offset = undefined;
+            dragging.start = undefined;
+            dragging.boardChecker = undefined;
+        };
 
         var drawArrow = function(fromCol, fromRow, toCol, toRow) {
             clearContext();
@@ -325,6 +379,11 @@
 
         board.addEventListener('move',function (e) {
             moveChecker(e);
+            if (whoseTurn == 'black') {
+              toggleTurn('red');
+            } else {
+              toggleTurn('black');
+            }
         },true);
 
         board.addEventListener('remove',function (e) {
@@ -346,13 +405,6 @@
           var playerColor = whoseTurn;
           var playerDirection = directionOf(playerColor);
           var result = rules.makeRandomMove(playerColor, playerDirection);
-          if (result != null) {
-            if (playerColor == 'black') {
-              toggleTurn('red');
-            } else {
-              toggleTurn('black');
-            }
-          }
         });
 
         board.prepareNewGame();
