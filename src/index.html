@@ -113,10 +113,19 @@
             var color = event.details.checker.color;
             var id = i+','+j;
             var e = document.getElementById(id);
+            var isKing = event.details.checker.isKing;
             if (color == 'black') {
-                e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                if (isKing) {
+                    e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/black-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                } else {
+                    e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                }
             } else {
-                e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
+                if (isKing) {
+                    e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/red-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
+                } else {
+                    e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
+                }
             }
         };
 
@@ -188,6 +197,9 @@
                         start: undefined,
                         checker: undefined,
                         boardChecker: undefined};
+
+        var undo = [];
+        var redo = [];
 
         var getCellFromCoords = function(x, y) {
             var newX = Math.floor(x/pixelSize);
@@ -302,13 +314,21 @@
                         //Put the checker back in the cell
                         var fakeEvent = {details: {checker: dragging.boardChecker}};
                         addChecker(fakeEvent);
+                    } else { //Good MOVE!
+                        //Push the ramifications to the undo stack
+                        undo.push(ramifications);
+                        if (undo.length > 0) {
+                            $("#btnUndo").prop('disabled', false);
+                        }
+                        //Empty the redo stack
+                        redo = [];
+                        $("#btnRedo").prop('disabled', true);
                     }
 
                     //Set dragging variable
                     resetDragging();
                 }
             }
-            //console.log(board);
         };
 
         function full_mouseup(event) {
@@ -344,6 +364,11 @@
             dragging.start = undefined;
             dragging.boardChecker = undefined;
         };
+
+        var resetArrow = function() {
+            arrowTail = [undefined, undefined];
+            arrowHead = [undefined, undefined];
+        }
 
         var drawArrow = function(fromCol, fromRow, toCol, toRow) {
             clearContext();
@@ -396,7 +421,9 @@
 
         
         $("#btnNewGame").click(function(evt) {
-            context.clearRect(0, 0, canvas.width, canvas.height);
+            clearContext();
+            resetDragging();
+            resetArrow();
             toggleTurn('black');
             board.prepareNewGame();
         });
@@ -405,7 +432,53 @@
           var playerColor = whoseTurn;
           var playerDirection = directionOf(playerColor);
           var result = rules.makeRandomMove(playerColor, playerDirection);
+          if (result != null) {
+            undo.push(result);
+          }
+          if (undo.length > 0) {
+             $("#btnUndo").prop('disabled', false);
+          }
+          //Empty the redo stack
+          redo = [];
+          $("#btnRedo").prop('disabled', true);
         });
+
+        $("#btnUndo").click(function(evt) {
+            var lastMove = undo.pop();
+            if (undo.length == 0) {
+                $("#btnUndo").prop('disabled', true);
+            }
+
+            //Handle the Movement
+            var checkerToMoveBack = board.getCheckerAt(lastMove['to_row'], lastMove['to_col']);
+            board.moveTo(checkerToMoveBack, lastMove['from_row'], lastMove['from_col']);
+
+            //If move involved taking a piece
+            if (lastMove.remove.length > 0) {
+                for (var i = 0; i < lastMove.remove.length; i++) {
+                    var checkerToAddBack = lastMove.remove[i];
+                    var newChecker = new Checker(checkerToAddBack.color, checkerToAddBack.isKing);
+                    board.add(newChecker, checkerToAddBack.row, checkerToAddBack.col);
+                }
+            }   
+
+            //Redo Stuff
+            redo.push(lastMove);
+            $("#btnRedo").prop('disabled', false);
+        });
+
+        $("#btnRedo").click(function(evt) {
+            console.log(redo);
+            var lastMove = redo.pop();
+            if (redo.length == 0) {
+                $("#btnRedo").prop('disabled', true);
+            }
+            var checkerToMoveBack = board.getCheckerAt(lastMove['from_row'], lastMove['from_col']);
+            board.moveTo(checkerToMoveBack, lastMove['to_row'], lastMove['to_col']);
+        });
+
+        $("#btnUndo").prop('disabled', true);
+        $("#btnRedo").prop('disabled', true);
 
         board.prepareNewGame();
 
@@ -424,6 +497,8 @@
 			  <tr><td><div id="turnDiv">Black Turn</div></td></tr>
               <tr><td><input id="btnNewGame" type="button" name="new" value="New Game"/></td></tr>
               <tr><td><input id="btnAutoMove" type="button" name="new" value="Auto Move"/></td></tr>
+              <tr><td><input id="btnUndo" type="button" name="new" value="Undo"/></td></tr>
+              <tr><td><input id="btnRedo" type="button" name="new" value="Redo"/></td></tr>
 
             </table>
         </td>
