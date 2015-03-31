@@ -116,15 +116,15 @@
             var isKing = event.details.checker.isKing;
             if (color == 'black') {
                 if (isKing) {
-                    e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/black-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                    e.innerHTML = '<img class="image" id=img'+i+','+j+' src="./graphics/black-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
                 } else {
-                    e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                    e.innerHTML = '<img class="image" id=img'+i+','+j+' src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
                 }
             } else {
                 if (isKing) {
-                    e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/red-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
+                    e.innerHTML = '<img class="image" id=img'+i+','+j+' src="./graphics/red-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
                 } else {
-                    e.innerHTML = '<img id=img'+i+','+j+' src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
+                    e.innerHTML = '<img class="image" id=img'+i+','+j+' src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';
                 }
             }
         };
@@ -146,15 +146,15 @@
             var color = event.details.checker.color;
             if (color == 'black') {
                 if (isKing) {
-                    destination.innerHTML = '<img id=img'+dID+' src="./graphics/black-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                    destination.innerHTML = '<img class="image" id=img'+dID+' src="./graphics/black-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
                 } else {
-                    destination.innerHTML = '<img id=img'+dID+' src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';  
+                    destination.innerHTML = '<img class="image" id=img'+dID+' src="./graphics/black-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">';  
                 }
             } else {
                 if (isKing) {
-                    destination.innerHTML = '<img id=img'+dID+' src="./graphics/red-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                    destination.innerHTML = '<img class="image" id=img'+dID+' src="./graphics/red-king.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
                 } else {
-                    destination.innerHTML = '<img id=img'+dID+' src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
+                    destination.innerHTML = '<img class="image" id=img'+dID+' src="./graphics/red-piece.png" style="width:'+pixelSize+'px;height:'+pixelSize+'px">'; 
                 }
                 
             }
@@ -182,14 +182,17 @@
         };
 
 
-        //Attach mouse event listeners
         var canvas = document.getElementById("theCanvas");
         var context = canvas.getContext("2d");
 
-        canvas.addEventListener("mousedown", my_mousedown, false);
-        canvas.addEventListener("mousemove", my_mousemove, false);
-        canvas.addEventListener("mouseup", my_mouseup, false);
+        //Attach mouse event listeners
+        var cells = document.getElementsByClassName("cell");
+        for (var i = 0; i < cells.length; i++) {
+            cells[i].addEventListener("mousedown", my_mousedown, false);
+            cells[i].addEventListener("mouseup", my_mouseup, false);
+        }
 
+        document.addEventListener("mousemove", my_mousemove, false);
         document.addEventListener("mouseup", full_mouseup, false);
 
         var dragging = {status: false,
@@ -210,30 +213,37 @@
         };
 
         function my_mousedown(event) {
+            console.log("MOUSEDOWN");
+            event.preventDefault();
             //Find coordinates and cell
             var rect = canvas.getBoundingClientRect();
-            var x = event.clientX - rect.left;
-            var y = event.clientY - rect.top;
-            var cellCoords = getCellFromCoords(x, y);
+            var canvasX = event.clientX - rect.left;
+            var canvasY = event.clientY - rect.top;
+            var cellCoords = getCellFromCoords(canvasX, canvasY);
             var cellX = cellCoords[0];
             var cellY = cellCoords[1];
-            var xRemainder = cellCoords[2];
-            var yRemainder = cellCoords[3];
+            var xCanvasRemainder = cellCoords[2];
+            var yCanvasRemainder = cellCoords[3];
             var theCell = document.getElementById(cellX+","+cellY);
             
             //Check if the cell has a checker
             if (theCell.getElementsByTagName('img').length > 0) {
+                console.log("IN");
                 //Take checker out of cell
                 var checker = document.getElementById("img"+cellX+','+cellY);
                 theCell.innerHTML = "";
 
-                //Put checker into canvas for moving
-                context.drawImage(checker, x - xRemainder, y - yRemainder);
+                //Put the checker into the board
+                checker.id = "mover";
+                checker.style.position = "absolute";
+                checker.style.left = String(event.clientX - xCanvasRemainder)+"px";
+                checker.style.top = String(event.clientY - yCanvasRemainder)+"px";
+                $('body').append(checker);
 
                 //Set dragging variable
                 dragging.status = true;
                 dragging.checker = checker;
-                dragging.offset = [xRemainder, yRemainder];
+                dragging.offset = [xCanvasRemainder, yCanvasRemainder];
                 dragging.start = [cellX, cellY];
                 dragging.boardChecker = board.getCheckerAt(cellY, cellX);
             }
@@ -241,21 +251,31 @@
 
         function my_mousemove(event) {
             //If we're not dragging, don't do anything
+            event.preventDefault();
             if (dragging.status == false || dragging.offset == undefined) {return false;}
+            console.log("MOVING");
 
             //Get current mouse position
-            var rect = canvas.getBoundingClientRect();
-            var mouseX = event.clientX - rect.left;
-            var mouseY = event.clientY - rect.top;
+            var mouseX = event.clientX;
+            var mouseY = event.clientY;
             var offsetX = mouseX - dragging.offset[0];
             var offsetY = mouseY - dragging.offset[1];
-            clearContext();
-            context.drawImage(dragging.checker, offsetX, offsetY);
 
+
+            var checker = document.getElementById("mover");
+            checker.remove();
+
+            checker = dragging.checker;
+            checker.style.left = String(offsetX)+"px";
+            checker.style.top = String(offsetY)+"px";
+            $('body').append(checker);
         };
 
         function my_mouseup(event) {
+            event.preventDefault();
             if (dragging.status == true) {
+                $(window).unbind("mousemove");
+                console.log("MOUSEUP");
                 //Find coordinates and cell
                 var rect = canvas.getBoundingClientRect();
                 var x = event.clientX - rect.left;
@@ -265,11 +285,10 @@
                 var cellY = cellCoords[1];
                 var theCell = document.getElementById(cellX+","+cellY);
                 var start = dragging.start;
+                console.log(cellX+","+cellY);
 
                 //It didn't move
                 if (start[0] == cellX && start[1] == cellY) {
-                    //Clear Context
-                    clearContext();
 
                     //Redraw most recent arrow
                     if (arrowTail[0] != undefined) {
@@ -282,6 +301,10 @@
 
                     //Set dragging variable
                     resetDragging();
+
+                    //Remove mover
+                    var checker = document.getElementById("mover");
+                    checker.remove();
 
                     //return false?
                     return false;
@@ -303,8 +326,6 @@
                     //BAD MOVE, WE NEED TO REVERT (**WE MUST INVERT**)
                     if (ramifications == null || whoseTurn == theChecker.color) {
                         console.log("BAD MOVE");
-                        //Clear Context
-                        clearContext();
 
                         //Redraw most recent arrow
                         if (arrowTail[0] != undefined) {
@@ -327,6 +348,10 @@
 
                     //Set dragging variable
                     resetDragging();
+
+                    //Remove mover
+                    var checker = document.getElementById("mover");
+                    checker.remove();
                 }
             }
         };
@@ -347,6 +372,10 @@
 
                 //Set dragging variable
                 resetDragging();
+
+                //Remove mover
+                var checker = document.getElementById("mover");
+                checker.remove();
 
                 //return false?
                 return false;
@@ -449,9 +478,17 @@
                 $("#btnUndo").prop('disabled', true);
             }
 
+            console.log(lastMove);
+
             //Handle the Movement
             var checkerToMoveBack = board.getCheckerAt(lastMove['to_row'], lastMove['to_col']);
-            board.moveTo(checkerToMoveBack, lastMove['from_row'], lastMove['from_col']);
+            //If a move involved promoting a piece
+            if (lastMove.made_king) {
+                checkerToMoveBack.isKing = false;    
+                board.moveTo(checkerToMoveBack, lastMove['from_row'], lastMove['from_col']);  
+            } else {
+                board.moveTo(checkerToMoveBack, lastMove['from_row'], lastMove['from_col']);
+            }
 
             //If move involved taking a piece
             if (lastMove.remove.length > 0) {
@@ -506,7 +543,7 @@
         <td id="content">
 			
 				<!-- Your code here -->
-                <canvas id="theCanvas" width="400" height="400" style="position:absolute;"></canvas>
+                <canvas id="theCanvas" width="400" height="400" style="position:absolute; pointer-events:none;"></canvas>
                 <div id="board"></div>          
             
         </td>
