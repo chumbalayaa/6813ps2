@@ -479,7 +479,6 @@
             }
 
             console.log(lastMove);
-
             //Handle the Movement
             var checkerToMoveBack = board.getCheckerAt(lastMove['to_row'], lastMove['to_col']);
             //If a move involved promoting a piece
@@ -505,13 +504,30 @@
         });
 
         $("#btnRedo").click(function(evt) {
-            console.log(redo);
             var lastMove = redo.pop();
             if (redo.length == 0) {
                 $("#btnRedo").prop('disabled', true);
             }
             var checkerToMoveBack = board.getCheckerAt(lastMove['from_row'], lastMove['from_col']);
+            //If a move involved promoting a piece
+            if(lastMove.made_king) {
+
+            } else {
+
+            }
             board.moveTo(checkerToMoveBack, lastMove['to_row'], lastMove['to_col']);
+
+            //If move involed taking a piece
+            if (lastMove.remove.length > 0) {
+                for (var i = 0; i < lastMove.remove.length; i++) {
+                    var checkerToAddBack = lastMove.remove[i];
+                    //var newChecker = new Checker(checkerToAddBack.color, checkerToAddBack.isKing);
+                    board.removeAt(checkerToAddBack.row, checkerToAddBack.col);
+                }
+            }
+
+            undo.push(lastMove);
+            $("#btnUndo").prop('disabled', false);
         });
 
         $("#btnUndo").prop('disabled', true);
